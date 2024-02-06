@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  db:
+    container_name: cybellum_db
+    image: postgres:16.1-bookworm
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: "${PG_PASS}"
+  
+  web:
+    container_name: cybellum_web
+    build:
+      dockerfile: app.Dockerfile
+      context: .
+    environment:
+      - FLASK_APP=/app/app.py
+      - FLASK_ENV
+    command: flask run -h 0.0.0.0 -p 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+volumes:
+  db:
