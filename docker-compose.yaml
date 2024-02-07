@@ -9,7 +9,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${PG_PASS}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      test: ["CMD-SHELL", "pg_isready"]
       interval: 5s
       timeout: 60s
       retries: 5
