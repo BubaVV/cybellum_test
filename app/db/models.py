@@ -2,8 +2,15 @@ import os
 from datetime import datetime
 
 from globs import Base, bcrypt, db_uri
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, LargeBinary,
-                        String, create_engine)
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    create_engine,
+)
 
 
 class User(Base):
@@ -37,6 +44,15 @@ class Comment(Base):
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow())
+
+
+def to_dict(model):
+    result = {}
+    for k in model.__table__.columns.keys():
+        if k == 'password_hash':
+            continue
+        result[k] = getattr(model, k)
+    return result
 
 
 engine = create_engine(db_uri)
