@@ -1,17 +1,9 @@
 import os
 from datetime import datetime
 
-import bcrypt
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String,
+from globs import Base, bcrypt, db_uri
+from sqlalchemy import (LargeBinary, Column, DateTime, ForeignKey, Integer, String,
                         create_engine)
-from sqlalchemy.ext.declarative import declarative_base
-
-db_name = os.environ['PG_DB']
-db_user = os.environ['PG_USER']
-db_pass = os.environ['PG_PASS']
-db_uri = f'postgresql://{db_user}:{db_pass}@cybellum_db:5432/{db_name}'
-Base = declarative_base()
-
 
 class User(Base):
     __tablename__ = 'users'
@@ -19,7 +11,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True)
     email = Column(String, unique=True)
-    password_hash = Column(String)
+    password_hash = Column(LargeBinary)
     created_at = Column(DateTime, default=datetime.utcnow())
 
     def authenticate(self, password):
