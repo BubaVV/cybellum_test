@@ -3,12 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 from db import models
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from flask import jsonify, abort
+from flask import jsonify, abort, request
+from sqlalchemy.exc import IntegrityError
 
 db = SQLAlchemy()
 engine = create_engine(models.db_uri)
 Session = sessionmaker(bind=engine) 
 session = Session()
+
+admin = models.User(id=1, username='admin', email='admin@example.com')
+session.merge(admin)
+session.commit()
 
 class User(Resource):
     def get(self, id=None):
@@ -34,12 +39,33 @@ class Post(Resource):
         else:
             result = session.query(models.Post).all()
             return jsonify(result)
-    def post(self, id):
-        pass
+    def post(self):
+        json_data = request.get_json(force=True)
+        title = json_data.get('title', '')
+        content = json_data.get('content', '')
+        author_id = json_data.get('author_id', 1)
+        post = models.Post(title=title, content=content, author_id=author_id)
+        session.add(post)
+        try:
+            session.commit()
+        except IntegrityError:
+            abort(400, 'Wrong data')
+            session.rollback()
+        return jsonify({'id': post.id})
 
 class Comment(Resource):
     def get(self, post_id):
         result = session.query(models.Comment).filter(models.Comment.post_id == post_id).all()
         return jsonify(result)
     def post(self, post_id):
-        pass
+        json_data = request.get_json(force=True)
+        content = json_data.get('content', '')
+        author_id = json_data.get('author_id', 1)
+        comment = models.Comment(content=content, author_id=author_id, post_id=post_id)
+        session.add(comment)
+        try:
+            session.commit()
+        except IntegrityError:
+            abort(400, 'Wrong data')
+            session.rollback()
+        return jsonify({'id': comment.id})
