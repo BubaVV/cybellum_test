@@ -1,8 +1,9 @@
-from datetime import datetime
 import os
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, create_engine
+from datetime import datetime
 
-
+import bcrypt
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String,
+                        create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 
 db_name = os.environ['PG_DB']
@@ -20,6 +21,9 @@ class User(Base):
     email = Column(String, unique=True)
     password_hash = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow())
+
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password.encode('utf-8'))
 
 class Post(Base):
     __tablename__ = "posts"

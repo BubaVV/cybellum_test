@@ -1,10 +1,12 @@
+from db import models
+from flask import abort, current_app, jsonify, request
+from flask_bcrypt import Bcrypt
 from flask_restful import Resource
 from flask_sqlalchemy import SQLAlchemy
-from db import models
-from sqlalchemy.orm import sessionmaker
+from globs import app
 from sqlalchemy import create_engine
-from flask import jsonify, abort, request
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 
 db = SQLAlchemy()
 engine = create_engine(models.db_uri)
@@ -14,6 +16,9 @@ session = Session()
 admin = models.User(id=1, username='admin', email='admin@example.com')
 session.merge(admin)
 session.commit()
+
+with app.app_context():
+    bcrypt = Bcrypt(current_app)
 
 class User(Resource):
     def get(self, id=None):
@@ -25,8 +30,21 @@ class User(Resource):
                 abort(404, f"User id {id} doesn't exist.")
         else:
             return jsonify("Current user info - not implemented yet")
-    def post(self, id):
-        pass
+    def post(self):
+        json_data = request.get_json(force=True)
+        username = json_data.get('username', '')
+        password = json_data.get('password', '')
+        email = json_data.get('email', '')
+        user = models.User(username=username,
+                           email=email,
+                           password_hash=bcrypt.generate_password_hash(password.encode('utf-8')))
+        session.add(user)
+        try:
+            session.commit()
+        except IntegrityError:
+            abort(400, 'Wrong data')
+            session.rollback()
+        return jsonify({'id': user.id})
 
 class Post(Resource):
     def get(self, id=None):
