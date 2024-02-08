@@ -9,13 +9,16 @@ from sqlalchemy.orm import sessionmaker
 
 db = SQLAlchemy()
 engine = create_engine(models.db_uri)
-Session = sessionmaker(bind=engine) 
+Session = sessionmaker(bind=engine)
 db_session = Session()
+
 
 class User(Resource):
     def get(self, id=None):
         id = id or session['user_id']
-        result = db_session.query(models.User).filter(models.User.id == id).one_or_none()
+        result = (
+            db_session.query(models.User).filter(models.User.id == id).one_or_none()
+        )
         if result:
             return jsonify(result)
         else:
@@ -26,9 +29,11 @@ class User(Resource):
         username = json_data.get('username', '')
         password = json_data.get('password', '')
         email = json_data.get('email', '')
-        user = models.User(username=username,
-                           email=email,
-                           password_hash=bcrypt.generate_password_hash(password.encode('utf-8')))
+        user = models.User(
+            username=username,
+            email=email,
+            password_hash=bcrypt.generate_password_hash(password.encode('utf-8')),
+        )
         db_session.add(user)
         try:
             db_session.commit()
@@ -37,10 +42,13 @@ class User(Resource):
             db_session.rollback()
         return jsonify({'id': user.id})
 
+
 class Post(Resource):
     def get(self, id=None):
         if id:
-            result = db_session.query(models.Post).filter(models.Post.id == id).one_or_none()
+            result = (
+                db_session.query(models.Post).filter(models.Post.id == id).one_or_none()
+            )
             if result:
                 return jsonify(result)
             else:
@@ -48,6 +56,7 @@ class Post(Resource):
         else:
             result = db_session.query(models.Post).all()
             return jsonify(result)
+
     def post(self):
         if 'user_id' in session:
             author_id = session['user_id']
@@ -65,10 +74,16 @@ class Post(Resource):
             db_session.rollback()
         return jsonify({'id': post.id})
 
+
 class Comment(Resource):
     def get(self, post_id):
-        result = db_session.query(models.Comment).filter(models.Comment.post_id == post_id).all()
+        result = (
+            db_session.query(models.Comment)
+            .filter(models.Comment.post_id == post_id)
+            .all()
+        )
         return jsonify(result)
+
     def post(self, post_id):
         if 'user_id' in session:
             author_id = session['user_id']
@@ -86,19 +101,25 @@ class Comment(Resource):
             abort(400, 'Wrong data')
             db_session.rollback()
         return jsonify({'id': comment.id})
-    
+
+
 class Login(Resource):
     def post(self):
         json_data = request.get_json(force=True)
         username = json_data.get('username', '')
         password = json_data.get('password', '')
 
-        user = db_session.query(models.User).filter(models.User.username == username).one_or_none()
+        user = (
+            db_session.query(models.User)
+            .filter(models.User.username == username)
+            .one_or_none()
+        )
         if user and user.authenticate(password):
             session['user_id'] = user.id
             return jsonify(f"User {user.id} logged in")
         else:
             return {'error': 'Logging error'}, 403
+
     def delete(self):
         if 'user_id' in session:
             session['user_id'] = None

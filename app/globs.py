@@ -1,4 +1,5 @@
 import os
+
 from db import models
 from flask import Flask
 from flask_bcrypt import Bcrypt
